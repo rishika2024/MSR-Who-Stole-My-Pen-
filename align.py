@@ -2,6 +2,8 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 
+import argparse
+
 class Alignment:
     def __init__(self, clipping_distance_in_meters = 1, fps = 30):
         
@@ -82,35 +84,83 @@ class Alignment:
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
         images = np.hstack((bg_removed, depth_colormap))
         return images
+    
+    def hsv_mask(self, color_image, low_H=0, low_S=0, low_V=0, high_H=180, high_S=255, high_V=255):
+        hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, (low_H, low_S, low_V), (high_H, high_S, high_V))
+        masked_image = cv2.bitwise_and(color_image, color_image, mask=mask)
+        return mask, masked_image
         
     def stop(self):
         self.pipeline.stop()
 
+max_value = 255
+max_value_H = 180
+
+# Initial HSV thresholds
+low_H, low_S, low_V = 0, 0, 0
+high_H, high_S, high_V = 180, 255, 255
+
+# Window names
+window_capture_name = 'Video Capture'
+window_detection_name = 'Object Detection'
+
+# Trackbar callbacks
+def nothing(x):
+    pass
+
 if __name__ == "__main__":
+    
+    # Initial HSV thresholds
+    max_value = 255
+    max_value_H = 180
+    low_H, low_S, low_V = 0, 0, 0
+    high_H, high_S, high_V = 180, 255, 255
+
+    # Single window for display + trackbars
+    window_name = 'Align Example'
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+    # Trackbars
+    cv2.createTrackbar('Low H', window_name, low_H, max_value_H, nothing)
+    cv2.createTrackbar('High H', window_name, high_H, max_value_H, nothing)
+    cv2.createTrackbar('Low S', window_name, low_S, max_value, nothing)
+    cv2.createTrackbar('High S', window_name, high_S, max_value, nothing)
+    cv2.createTrackbar('Low V', window_name, low_V, max_value, nothing)
+    cv2.createTrackbar('High V', window_name, high_V, max_value, nothing)
 
     align = Alignment(clipping_distance_in_meters=1, fps=30)
 
     try:
         while True:
             depth_image, color_image = align.aligned_frames()
-            bg_removed = align.remove_bg(depth_image, color_image, bg_color = 153)
-            images = align.render(bg_removed, depth_image)
+            if depth_image is None or color_image is None:
+                continue
 
-            cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL)
-            cv2.imshow('Align Example', images)
+            # Remove background
+            bg_removed = align.remove_bg(depth_image, color_image, bg_color=153)
+
+            # Read HSV values from trackbars
+            low_H = cv2.getTrackbarPos('Low H', window_name)
+            high_H = cv2.getTrackbarPos('High H', window_name)
+            low_S = cv2.getTrackbarPos('Low S', window_name)
+            high_S = cv2.getTrackbarPos('High S', window_name)
+            low_V = cv2.getTrackbarPos('Low V', window_name)
+            high_V = cv2.getTrackbarPos('High V', window_name)
+
+            # Apply HSV mask
+            mask, masked_image = align.hsv_mask(bg_removed, low_H, low_S, low_V,
+                                                high_H, high_S, high_V)
+
+            # Render masked image + depth
+            images = align.render(masked_image, depth_image)
+
+            # Show in single window
+            cv2.imshow(window_name, images)
+
             key = cv2.waitKey(1)
-            # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
-                cv2.destroyAllWindows()
                 break
     finally:
         align.stop()
-
-            
-        
-    
-
-
-
-    
-
+        cv2.destroyAllWindows()
