@@ -18,7 +18,7 @@ robot_startup()
 mode = 'h'
 # Let the user select the position
 while mode != 'q':
-    mode=input("[h]ome, [s]leep, [q]uit, [r]elease, [g]rasp, [t]rajectory, [p]ose")
+    mode=input("[h]ome, [s]leep, [q]uit, [r]elease, [g]rasp, [t]rajectory, [p]ose [a]pos ")
     if mode == "h":
         robot.arm.go_to_home_pose()
         print(robot.arm.get_ee_pose())
@@ -41,6 +41,10 @@ while mode != 'q':
 
     elif mode =='p':
         print(robot.core.robot_get_joint_states())
+
+    elif mode == 'a':
+        robot.arm.set_single_joint_position('waist', 1.57)
+
 
     
 
