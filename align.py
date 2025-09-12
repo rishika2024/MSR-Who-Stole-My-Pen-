@@ -85,6 +85,7 @@ class Alignment:
     def add_contour(self,mask=None):
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        
         return contours
 
         
@@ -94,20 +95,13 @@ class Alignment:
         if mask is not None:
             mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
             #images = np.hstack((bg_removed, mask_bgr, depth_colormap))
-            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask)
+            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask)          
+
+            
 
             if contours is not None and len(contours) > 0:
-                # Pick largest contour
-                largest_contour = max(contours, key=cv2.contourArea)
-
-                # Approximate contour to reduce number of points
-                epsilon = 0.1 * cv2.arcLength(largest_contour, True)
-                approx = cv2.approxPolyDP(largest_contour, epsilon, True)
-
-                # Draw the approximated contour on pen_only
-                cv2.drawContours(pen_only, [approx], -1, (0, 255, 0), 5)                 
                 
-                
+                cv2.drawContours(pen_only, contours, -1, (0, 255, 0), 5)
             combined = cv2.add(bg_removed, pen_only)
             
             
