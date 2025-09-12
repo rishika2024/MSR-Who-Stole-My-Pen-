@@ -107,8 +107,10 @@ class Alignment:
             
         else:
             combined = bg_removed #images = np.hstack((bg_removed, depth_colormap))
+        
+        images = np.hstack((bg_removed, combined, depth_colormap))
 
-        return combined   
+        return images   
 
     def find_centroid(self, contours):
         if contours is None or len(contours) == 0:
