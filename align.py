@@ -82,16 +82,23 @@ class Alignment:
         mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
         return mask
     
-    #def add_mask_with_pen(self, )
+    def add_contour(self,mask=None):
+        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        return contours
 
         
-    def render(self, color_image, mask=None): #def render(self, bg_removed, depth_image, mask=None):
+    def render(self, color_image, depth_image, mask=None, contours = None):
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
 
         if mask is not None:
             mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
             #images = np.hstack((bg_removed, mask_bgr, depth_colormap))
             pen_only = cv2.bitwise_and(color_image, color_image, mask=mask)
+
+            if contours is not None and len(contours) > 0:
+                
+                cv2.drawContours(pen_only, contours, -1, (0, 255, 0), 2)
             
             images = np.hstack((color_image, mask_bgr, pen_only))
         else:
@@ -152,10 +159,10 @@ if __name__ == "__main__":
 
             #cv2.imshow('Pen Overlay', result)
 
-            
+            contour = align.add_contour(mask)
             
             # Render masked image + depth
-            images = align.render(color_image, mask)
+            images = align.render(color_image, depth_image, mask, contour)
 
             # Show in single window
             cv2.imshow(window_name, images)
