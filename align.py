@@ -83,12 +83,12 @@ class Alignment:
         return mask
     
     def add_contour(self,mask=None):
-        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         return contours
 
         
-    def render(self, color_image, depth_image, mask=None, contours = None):
+    def render(self, color_image, depth_image, bg_removed, mask=None, contours = None):
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
 
         if mask is not None:
@@ -97,14 +97,39 @@ class Alignment:
             pen_only = cv2.bitwise_and(color_image, color_image, mask=mask)
 
             if contours is not None and len(contours) > 0:
-                
-                cv2.drawContours(pen_only, contours, -1, (0, 255, 0), 2)
-            
-            images = np.hstack((color_image, mask_bgr, pen_only))
-        else:
-            images = np.hstack((bg_removed, depth_colormap))
+                # Pick largest contour
+                largest_contour = max(contours, key=cv2.contourArea)
 
-        return images      
+                # Approximate contour to reduce number of points
+                epsilon = 0.1 * cv2.arcLength(largest_contour, True)
+                approx = cv2.approxPolyDP(largest_contour, epsilon, True)
+
+                # Draw the approximated contour on pen_only
+                cv2.drawContours(pen_only, [approx], -1, (0, 255, 0), 5)                 
+                
+                
+            combined = cv2.add(bg_removed, pen_only)
+            
+            
+        else:
+            combined = bg_removed #images = np.hstack((bg_removed, depth_colormap))
+
+        return combined   
+
+    def find_centroid(self, contours):
+        if contours is None or len(contours) == 0:
+            return None  # no contours found
+
+        # Usually we want the largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+    
+        M = cv2.moments(largest_contour)
+        if M['m00'] == 0:
+            return None  # avoid division by zero
+
+        cx = int(M['m10'] / M['m00'])
+        cy = int(M['m01'] / M['m00'])
+        return (cx,cy)
     
     
         
@@ -162,7 +187,12 @@ if __name__ == "__main__":
             contour = align.add_contour(mask)
             
             # Render masked image + depth
-            images = align.render(color_image, depth_image, mask, contour)
+            images = align.render(color_image, depth_image, bg_removed, mask, contour)
+
+            #printing centroid
+            centroid = align.find_centroid(contour)
+            print(f"centroid = {centroid}")
+
 
             # Show in single window
             cv2.imshow(window_name, images)
