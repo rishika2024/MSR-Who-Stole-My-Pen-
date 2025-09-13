@@ -86,8 +86,10 @@ class Alignment:
         return mask
     
     def add_contour(self,mask=None):
-        contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+        # Morphological closing (fills small gaps inside the pen mask)
+        kernel = np.ones((5,5), np.uint8)
+        mask_closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        contours, hierarchy = cv2.findContours(mask_closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         return contours
 
@@ -98,37 +100,37 @@ class Alignment:
         if mask is not None:
             mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
             #images = np.hstack((bg_removed, mask_bgr, depth_colormap))
-            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask)          
+            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask) 
 
             
 
             if contours is not None and len(contours) > 0:
-                
-                cv2.drawContours(pen_only, contours, -1, (0, 255, 0), 5)
-            combined = cv2.add(bg_removed, pen_only)
+                cnt =  max(contours, key=cv2.contourArea)
+
+                if len(cnt) >= 5:
+                     ellipse = cv2.fitEllipse(cnt)
+                     cv2.ellipse(pen_only,ellipse,(0,255,0),2)
             
             
-        else:
-            combined = bg_removed #images = np.hstack((bg_removed, depth_colormap))
-        
-        images = np.hstack((bg_removed, combined, depth_colormap))
+        images = np.hstack((pen_only, bg_removed, depth_colormap))
 
         return images   
 
     def find_centroid(self, contours):
         if contours is None or len(contours) == 0:
             return None  # no contours found
-
-        # Usually we want the largest contour
+        
+        # Use largest contour to avoid small blobs (like silver band reflections)
         largest_contour = max(contours, key=cv2.contourArea)
-    
-        M = cv2.moments(largest_contour)
-        if M['m00'] == 0:
-            return None  # avoid division by zero
 
-        cx = int(M['m10'] / M['m00'])
-        cy = int(M['m01'] / M['m00'])
-        return (cx,cy)
+        # fitEllipse needs at least 5 points
+        if len(largest_contour) < 5:
+            return None
+
+        ellipse = cv2.fitEllipse(largest_contour)
+        (cx, cy), (axes, axes2), angle = ellipse  # unpack ellipse params
+
+        return (int(cx), int(cy))
     
     
         
@@ -192,20 +194,23 @@ if __name__ == "__main__":
             centroid = align.find_centroid(contour)
             
             if centroid is not None:
-                px, py = centroid
+                (px, py) = centroid
+
+                h, w = depth_image.shape
+                px = max(0, min(px, w - 1))
+                py = max(0, min(py, h - 1))
                 print(f"Centroid = ({px}, {py})")
 
-                # Get the raw depth value for the centroid pixel
-                # Note: The order of indices is [height, width] or [y, x] for numpy arrays
+                # draw centroid on image for visualization
+                cv2.circle(images, (px, py), 5, (0, 0, 255), -1)
+
+                # Get depth at centroid
                 depth_value_in_units = depth_image[py, px]
-                
-                # Convert the raw depth value to meters using the depth scale
                 depth_in_meters = depth_value_in_units * align.depth_scale
 
-                # Deproject the pixel to get the 3D coordinates
+                # Deproject pixel to 3D world coordinates
                 point_3d = rs.rs2_deproject_pixel_to_point(align.intrinsics, [px, py], depth_in_meters)
                 print(f"3D Point in meters: {point_3d}")
-
 
             # Show in single window
             cv2.imshow(window_name, images)

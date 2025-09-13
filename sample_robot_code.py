@@ -57,24 +57,24 @@ mode = 'h'
         robot.arm.set_single_joint_position('waist', -1.57)
         print(robot.arm.get_ee_pose())"""
 
-x=0.2496
+x=0.2
 y=0
-z=0.1672
-angle = 1.57
+z=0.06
+angle = 0
 
 
 while mode != 'q':
 
-    mode=input("[n]ext, [q]uit, [g]rasp, [r]elease")
+    mode=input("[n]ext, [q]uit, [g]rasp, [r]elease, [s]leep")
 
     if mode == 'n':
 
-        robot.arm.set_ee_pose_components(x=0.2496, y=0, z=0.1672, moving_time =2)
+        robot.arm.set_ee_pose_components(x=x, y=y, z=z, moving_time=2)
         robot.arm.set_single_joint_position('waist', angle)
         print(f"robot pose ={robot.arm.get_ee_pose()}")
-        x-=0.01
-        z+=0.01
-        angle-=0.1
+        x+=0.05
+        z+=0.1
+        angle-=0.5
 
     elif mode == 'r':
         robot.gripper.release()
@@ -82,13 +82,10 @@ while mode != 'q':
     elif mode == 'g':
         robot.gripper.grasp()
 
+    elif mode == "s":
+        robot.arm.go_to_sleep_pose()
+        print(robot.arm.get_ee_pose())
 
-
-
-
-
-
-
-    
+   
 
 robot_shutdown()
