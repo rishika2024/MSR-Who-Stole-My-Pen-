@@ -48,6 +48,9 @@ class Alignment:
         self.align_to = rs.stream.color
         self.align = rs.align(self.align_to)
 
+        self.depth_stream = self.profile.get_stream(rs.stream.depth).as_video_stream_profile()
+        self.intrinsics = self.depth_stream.get_intrinsics()
+
     def aligned_frames(self):
         # Get frameset of color and depth
         frames = self.pipeline.wait_for_frames()
@@ -185,9 +188,23 @@ if __name__ == "__main__":
             # Render masked image + depth
             images = align.render(color_image, depth_image, bg_removed, mask, contour)
 
-            #printing centroid
+            # Find the centroid of the contour
             centroid = align.find_centroid(contour)
-            print(f"centroid = {centroid}")
+            
+            if centroid is not None:
+                px, py = centroid
+                print(f"Centroid = ({px}, {py})")
+
+                # Get the raw depth value for the centroid pixel
+                # Note: The order of indices is [height, width] or [y, x] for numpy arrays
+                depth_value_in_units = depth_image[py, px]
+                
+                # Convert the raw depth value to meters using the depth scale
+                depth_in_meters = depth_value_in_units * align.depth_scale
+
+                # Deproject the pixel to get the 3D coordinates
+                point_3d = rs.rs2_deproject_pixel_to_point(align.intrinsics, [px, py], depth_in_meters)
+                print(f"3D Point in meters: {point_3d}")
 
 
             # Show in single window
