@@ -135,7 +135,7 @@ class Alignment:
 
         return (int(cx), int(cy))
     
-    def find_centroid_3d(self, centroid=(0,0), depth_image):
+    def find_centroid_3d(self, centroid=(0,0), depth_image=None):
         if centroid is not None:
             (px, py) = centroid
 
