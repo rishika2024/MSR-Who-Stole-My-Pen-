@@ -51,6 +51,9 @@ class Alignment:
         self.depth_stream = self.profile.get_stream(rs.stream.depth).as_video_stream_profile()
         self.intrinsics = self.depth_stream.get_intrinsics()
 
+        self.lower_hsv = np.array([111, 95, 89])
+        self.upper_hsv = np.array([135, 255, 174])
+
     def aligned_frames(self):
         # Get frameset of color and depth
         frames = self.pipeline.wait_for_frames()
@@ -132,6 +135,29 @@ class Alignment:
 
         return (int(cx), int(cy))
     
+    def find_centroid_3d(self, centroid=(0,0), depth_image):
+        if centroid is not None:
+            (px, py) = centroid
+
+            h, w = depth_image.shape
+            px = max(0, min(px, w - 1))
+            py = max(0, min(py, h - 1))
+            print(f"Centroid = ({px}, {py})")
+
+            # draw centroid on image for visualization
+            cv2.circle(images, (px, py), 5, (0, 0, 255), -1)
+
+            # Get depth at centroid
+            depth_value_in_units = depth_image[py, px]
+            depth_in_meters = depth_value_in_units * align.depth_scale
+
+            # Deproject pixel to 3D world coordinates
+            point_3d = rs.rs2_deproject_pixel_to_point(align.intrinsics, [px, py], depth_in_meters)
+            print(f"3D Point in meters: {point_3d}")
+
+            return point_3d
+
+    
     
         
     def stop(self):
@@ -139,8 +165,7 @@ class Alignment:
 
 
 
-lower_hsv = np.array([111, 95, 89])
-upper_hsv = np.array([135, 255, 174])
+  
 
 # Window names
 #window_capture_name = 'Video Capture'
@@ -178,7 +203,7 @@ if __name__ == "__main__":
             bg_removed = align.remove_bg(depth_image, color_image, bg_color=153)          
 
             # Apply HSV mask
-            mask = align.hsv_mask(color_image, lower_hsv=lower_hsv, higher_hsv=upper_hsv)        
+            mask = align.hsv_mask(color_image, lower_hsv=align.lower_hsv, higher_hsv=align.upper_hsv)        
 
             # Combine background + pen overlay
             #result = cv2.add(img_bg, pen_overlay)
@@ -192,8 +217,10 @@ if __name__ == "__main__":
 
             # Find the centroid of the contour
             centroid = align.find_centroid(contour)
+
+            point_3d = align.find_centroid_3d(centroid, depth_image)
             
-            if centroid is not None:
+            """if centroid is not None:
                 (px, py) = centroid
 
                 h, w = depth_image.shape
@@ -210,7 +237,7 @@ if __name__ == "__main__":
 
                 # Deproject pixel to 3D world coordinates
                 point_3d = rs.rs2_deproject_pixel_to_point(align.intrinsics, [px, py], depth_in_meters)
-                print(f"3D Point in meters: {point_3d}")
+                print(f"3D Point in meters: {point_3d}")"""
 
             # Show in single window
             cv2.imshow(window_name, images)
