@@ -115,7 +115,7 @@ class Alignment:
                      ellipse = cv2.fitEllipse(cnt)
                      cv2.ellipse(pen_blur,ellipse,(0,255,0),2)            
             
-        images = np.hstack((pen_blur, depth_colormap))
+        images = np.hstack((pen_blur, bg_removed, depth_colormap))
 
         return images   
 
@@ -141,7 +141,7 @@ class Alignment:
             h, w = depth_image.shape
             px = max(0, min(px, w - 1))
             py = max(0, min(py, h - 1))
-            print(f"Centroid = ({px}, {py})")
+            #print(f"Centroid = ({px}, {py})")
 
             # draw centroid on image for visualization
             cv2.circle(images, (px, py), 5, (0, 0, 255), -1)
