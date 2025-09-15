@@ -112,7 +112,7 @@ if __name__ == "__main__":
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            if len(points_history) >= 50:  # Stop after collecting 50 points
+            if len(points_history) >= 100:  # Stop after collecting 50 points
                 break
 
     finally:
