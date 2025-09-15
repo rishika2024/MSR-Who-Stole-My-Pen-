@@ -1,5 +1,6 @@
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 from interbotix_common_modules.common_robot.robot import robot_shutdown, robot_startup
+import numpy as np
 
 # The robot object is what you use to control the robot
 
@@ -62,43 +63,43 @@ y=0
 z=0.06
 angle = 0
 
+def translation(arr):
+    matrix = np.array(arr)
+    translation = matrix[:3, 3]
+    return translation
+
 
 while mode != 'q':
 
-    with open("robot_log.txt", "a", buffering=1) as file:
+    mode=input("[n]ext, [q]uit, [g]rasp, [r]elease, [s]leep, [h]ome")
 
-        mode=input("[n]ext, [q]uit, [g]rasp, [r]elease, [s]leep, [h]ome")
+    if mode == 'n':
 
-        if mode == 'n':
+        robot.arm.set_ee_pose_components(x=x, y=y, z=z, yaw = angle, moving_time=2)
+        # Relative waist rotation
+        #current_waist = robot.arm.joint_positions['waist']
+        #robot.arm.set_single_joint_position('waist', position=current_waist + angle)
+        tran = translation(robot.arm.get_ee_pose())
+        print(f"robot pose ={tran}")
+        x+=0.05
+        z+=0.1
+        angle = angle-1.0
 
-            robot.arm.set_ee_pose_components(x=x, y=y, z=z, yaw = angle, moving_time=2)
-            # Relative waist rotation
-            #current_waist = robot.arm.joint_positions['waist']
-            #robot.arm.set_single_joint_position('waist', position=current_waist + angle)
-            print(f"robot pose ={robot.arm.get_ee_pose()}")
-            file.write((f"robot pose ={robot.arm.get_ee_pose()}", '\n'))
-            file.flush()
-            x+=0.05
-            z+=0.1
-            angle = angle-1.0
+    elif mode == 'r':
+        robot.gripper.release()
 
-        elif mode == 'r':
-            robot.gripper.release()
-    
-        elif mode == 'g':
-            robot.gripper.grasp()
-    
-        elif mode == "s":
-            robot.arm.go_to_sleep_pose()
-            print(robot.arm.get_ee_pose())
-            file.write((f"robot sleep ={robot.arm.get_ee_pose()}", '\n'))
-            file.flush()
-    
-        elif mode == "h":
-            robot.arm.go_to_home_pose()
-            print(robot.arm.get_ee_pose())
-            file.write((f"robot home ={robot.arm.get_ee_pose()}", '\n'))
-            file.flush()
+    elif mode == 'g':
+        robot.gripper.grasp()
+
+    elif mode == "s":
+        robot.arm.go_to_sleep_pose()
+        tran = translation(robot.arm.get_ee_pose())
+        print(f"robot pose ={tran}")
+
+    elif mode == "h":
+        robot.arm.go_to_home_pose()
+        tran = translation(robot.arm.get_ee_pose())
+        print(f"robot pose ={tran}")
 
    
 

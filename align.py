@@ -105,7 +105,7 @@ class Alignment:
 
         if mask is not None:
             mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)            
-            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask) 
+            pen_only = cv2.bitwise_and(bg_removed, bg_removed, mask=mask) 
             pen_blur = cv2.blur(pen_only, (10,10))            
 
             if contours is not None and len(contours) > 0:
@@ -195,6 +195,11 @@ if __name__ == "__main__":
             # Find the centroid of the contour
             centroid = align.find_centroid(contour)
             point_3d = align.find_centroid_3d(centroid, depth_image) 
+
+            points = []
+            points.append(point_3d)
+
+
             
 
                      
@@ -206,5 +211,9 @@ if __name__ == "__main__":
             if key & 0xFF == ord('q') or key == 27:
                 break
     finally:
+        arr = np.array(points)
+        mean = np.mean(points, axis=0)
+        print(f"mean = {mean}")
         align.stop()
         cv2.destroyAllWindows()
+       

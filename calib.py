@@ -5,15 +5,21 @@ def compute_calibration():
     
     # Data
     camera_points = np.array([
-        [0.02234892, -0.0541107, 0.34890001],
-        [-0.09026493, 0.03537184, 0.34936364],
-        [-0.18827625, 0.00991136, 0.34972771]
+        [ 0.07533889, -0.05585445,  0.32900003],
+        [-0.01806629,  0.00711228,  0.38500002],
+        [-0.10960154, -0.07563574,  0.42000002],
+        [-0.12632586, -0.15719515,  0.41800001]
+
+        
     ])
 
-    robot_points = np.array([
-        [0.09, 0., 0.08422],
-        [0.196665639, -0.00150843621, 0.0491259130],
-        [0.25183136, -0.00193156, 0.12078869]
+    robot_points = np.array([        
+        [0.09057223, 0.0,  0.08396219],
+        [0.19578836, 0.0,  0.04812197],
+        [0.25173868, 0.0,  0.12048092],
+        [0.25001417, 0.0,  0.16486356]
+
+        
     ])
 
     # Compute centroids
@@ -31,4 +37,8 @@ def compute_calibration():
     # Compute translation
     translation = robot_centroid - rot.apply(camera_centroid)
 
+    print(f"rotation matrix = {rotation_matrix}, \n, translation_matrix={translation}")
+
     return rotation_matrix, translation
+
+compute_calibration()
