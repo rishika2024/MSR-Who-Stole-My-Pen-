@@ -1,6 +1,6 @@
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 from interbotix_common_modules.common_robot.robot import robot_shutdown, robot_startup
-import math
+
 # The robot object is what you use to control the robot
 
 """ home ee position = 
