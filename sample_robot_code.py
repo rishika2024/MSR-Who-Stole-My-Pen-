@@ -65,32 +65,40 @@ angle = 0
 
 while mode != 'q':
 
-    mode=input("[n]ext, [q]uit, [g]rasp, [r]elease, [s]leep, [h]ome")
+    with open("robot_log.txt", "a", buffering=1) as file:
 
-    if mode == 'n':
+        mode=input("[n]ext, [q]uit, [g]rasp, [r]elease, [s]leep, [h]ome")
 
-        robot.arm.set_ee_pose_components(x=x, y=y, z=z, yaw = angle, moving_time=2)
-        # Relative waist rotation
-        #current_waist = robot.arm.joint_positions['waist']
-        #robot.arm.set_single_joint_position('waist', position=current_waist + angle)
-        print(f"robot pose ={robot.arm.get_ee_pose()}")
-        x+=0.05
-        z+=0.1
-        angle = angle-1.0
+        if mode == 'n':
 
-    elif mode == 'r':
-        robot.gripper.release()
+            robot.arm.set_ee_pose_components(x=x, y=y, z=z, yaw = angle, moving_time=2)
+            # Relative waist rotation
+            #current_waist = robot.arm.joint_positions['waist']
+            #robot.arm.set_single_joint_position('waist', position=current_waist + angle)
+            print(f"robot pose ={robot.arm.get_ee_pose()}")
+            file.write((f"robot pose ={robot.arm.get_ee_pose()}", '\n'))
+            file.flush()
+            x+=0.05
+            z+=0.1
+            angle = angle-1.0
 
-    elif mode == 'g':
-        robot.gripper.grasp()
-
-    elif mode == "s":
-        robot.arm.go_to_sleep_pose()
-        print(robot.arm.get_ee_pose())
-
-    elif mode == "h":
-        robot.arm.go_to_home_pose()
-        print(robot.arm.get_ee_pose())
+        elif mode == 'r':
+            robot.gripper.release()
+    
+        elif mode == 'g':
+            robot.gripper.grasp()
+    
+        elif mode == "s":
+            robot.arm.go_to_sleep_pose()
+            print(robot.arm.get_ee_pose())
+            file.write((f"robot sleep ={robot.arm.get_ee_pose()}", '\n'))
+            file.flush()
+    
+        elif mode == "h":
+            robot.arm.go_to_home_pose()
+            print(robot.arm.get_ee_pose())
+            file.write((f"robot home ={robot.arm.get_ee_pose()}", '\n'))
+            file.flush()
 
    
 

@@ -54,7 +54,7 @@ class Alignment:
         self.lower_hsv = np.array([111, 95, 89])
         self.upper_hsv = np.array([135, 255, 174])
 
-        self.filepath = "camera_points.txt"  
+        
 
     def aligned_frames(self):
 
@@ -94,7 +94,7 @@ class Alignment:
     
     def add_contour(self,mask=None):
         # Morphological closing (fills small gaps inside the pen mask)
-        kernel = np.ones((5,5), np.uint8)
+        kernel = np.ones((7,7), np.uint8)
         mask_closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
         contours, hierarchy = cv2.findContours(mask_closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -105,16 +105,17 @@ class Alignment:
 
         if mask is not None:
             mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)            
-            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask)             
+            pen_only = cv2.bitwise_and(color_image, color_image, mask=mask) 
+            pen_blur = cv2.blur(pen_only, (10,10))            
 
             if contours is not None and len(contours) > 0:
                 cnt =  max(contours, key=cv2.contourArea)
 
                 if len(cnt) >= 5:
                      ellipse = cv2.fitEllipse(cnt)
-                     cv2.ellipse(pen_only,ellipse,(0,255,0),2)            
+                     cv2.ellipse(pen_blur,ellipse,(0,255,0),2)            
             
-        images = np.hstack((pen_only, depth_colormap))
+        images = np.hstack((pen_blur, depth_colormap))
 
         return images   
 
@@ -155,16 +156,7 @@ class Alignment:
 
             return point_3d   
         
-    def save_point(self, point):
-        if point is None:
-            return
-       
-        with open(self.filepath, "a") as f:
-            f.write(f"{point[0]:.4f}, {point[1]:.4f}, {point[2]:.4f}\n")
-
-        print(f"Saved point: {point}")
-
-    
+      
     def stop(self):
         self.pipeline.stop() 
 
@@ -203,7 +195,7 @@ if __name__ == "__main__":
             # Find the centroid of the contour
             centroid = align.find_centroid(contour)
             point_3d = align.find_centroid_3d(centroid, depth_image) 
-            align.save_point(point_3d)
+            
 
                      
             
