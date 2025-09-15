@@ -212,7 +212,7 @@ if __name__ == "__main__":
                 break
     finally:
         arr = np.array(points)
-        mean = np.mean(points, axis=0)
+        mean = np.mean(points, axis =0)
         print(f"mean = {mean}")
         align.stop()
         cv2.destroyAllWindows()
